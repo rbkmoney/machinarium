@@ -25,9 +25,9 @@ public class AutomatonClient<T extends TBase> {
         this.resultType = resultType;
     }
 
-    public void start(String machineId, TBase args) throws MachineAlreadyExistsException, MachineFailedException, NamespaceNotFoundException {
+    public void start(String machineId, Value args) throws MachineAlreadyExistsException, MachineFailedException, NamespaceNotFoundException {
         try {
-            client.start(namespace, machineId, Value.bin(Geck.toMsgPack(args)));
+            client.start(namespace, machineId, args);
         } catch (MachineFailed ex) {
             throw new MachineFailedException(String.format("Machine failed, namespace='%s', machineId='%s', args='%s'", namespace, machineId, args), ex);
         } catch (MachineAlreadyExists ex) {
@@ -39,12 +39,9 @@ public class AutomatonClient<T extends TBase> {
         }
     }
 
-    public T call(String machineId, TBase args) throws NamespaceNotFoundException, MachineFailedException, MachineNotFoundException, MachineAlreadyWorkingException {
+    public T call(String machineId, Value args) throws NamespaceNotFoundException, MachineFailedException, MachineNotFoundException, MachineAlreadyWorkingException {
         try {
-            Value value = client.call(
-                    new MachineDescriptor(namespace, Reference.id(machineId), new HistoryRange()),
-                    Value.bin(Geck.toMsgPack(args))
-            );
+            Value value = client.call(new MachineDescriptor(namespace, Reference.id(machineId), new HistoryRange()), args);
             return Geck.msgPackToTBase(value.getBin(), resultType);
         } catch (MachineFailed ex) {
             throw new MachineFailedException(String.format("Machine failed, namespace='%s', machineId='%s', args='%s'", namespace, machineId, args), ex);
