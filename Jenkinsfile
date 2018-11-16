@@ -1,5 +1,5 @@
 #!groovy
-build('machinarium', 'docker-host') {
+build('machinarium', 'java-maven') {
     checkoutRepo()
     loadBuildUtils()
 

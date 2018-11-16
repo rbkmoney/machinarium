@@ -1,7 +1,5 @@
 package com.rbkmoney.machinarium.domain;
 
-import org.apache.thrift.TBase;
-
 import java.time.Instant;
 
 public class TMachineEvent<T> {
