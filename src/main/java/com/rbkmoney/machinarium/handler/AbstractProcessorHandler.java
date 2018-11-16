@@ -28,15 +28,10 @@ public abstract class AbstractProcessorHandler<T extends TBase> implements Proce
         Machine machine = args.getMachine();
         SignalResultData signalResult = processSignal(signalType, args, machine);
 
-        List<T> newEvents = signalResult.getNewEvents();
-        MachineStateChange machineStateChange = new MachineStateChange();
-        machineStateChange.setAuxStateLegacy(Value.nl(new Nil())); //??
-        machineStateChange.setEventsLegacy(
-                newEvents.stream()
-                        .map(event -> Value.bin(Geck.toMsgPack(event)))
-                        .collect(Collectors.toList())
+        return new SignalResult(
+                buildMachineStateChange(signalResult.getNewEvents()),
+                signalResult.getComplexAction()
         );
-        return new SignalResult(machineStateChange, signalResult.getComplexAction());
     }
 
     @Override
@@ -44,6 +39,27 @@ public abstract class AbstractProcessorHandler<T extends TBase> implements Proce
         Machine machine = args.getMachine();
         CallResultData callResult = processCall(machine.getNs(), machine.getId(), args.getArg(), MachineUtil.getMachineEvents(machine, resultType));
         List<T> newEvents = callResult.getNewEvents();
+
+        return new CallResult(
+                Value.bin(Geck.toMsgPack(callResult.getCallResult())),
+                buildMachineStateChange(newEvents),
+                callResult.getComplexAction()
+        );
+    }
+
+    private SignalResultData processSignal(Signal._Fields signalType, SignalArgs args, Machine machine) {
+        switch (signalType) {
+            case INIT:
+                InitSignal initSignal = args.getSignal().getInit();
+                return processSignalInit(machine.getNs(), machine.getId(), initSignal.getArg());
+            case TIMEOUT:
+                return processSignalTimeout(machine.getNs(), machine.getId(), MachineUtil.getMachineEvents(machine, resultType));
+            default:
+                throw new UnsupportedOperationException(String.format("Unsupported signal type, signalType='%s'", signalType));
+        }
+    }
+
+    private MachineStateChange buildMachineStateChange(List<T> newEvents) {
         MachineStateChange machineStateChange = new MachineStateChange();
         machineStateChange.setAuxStateLegacy(Value.nl(new Nil())); //??
         machineStateChange.setEventsLegacy(
@@ -51,24 +67,12 @@ public abstract class AbstractProcessorHandler<T extends TBase> implements Proce
                         .map(event -> Value.bin(Geck.toMsgPack(event)))
                         .collect(Collectors.toList())
         );
-        return new CallResult(Value.bin(Geck.toMsgPack(callResult.getCallResult())), machineStateChange, callResult.getComplexAction());
+        return machineStateChange;
     }
 
-    private SignalResultData processSignal(Signal._Fields signalType, SignalArgs args, Machine machine) {
-        switch (signalType) {
-            case INIT:
-                InitSignal initSignal = args.getSignal().getInit();
-                return processInit(machine.getNs(), machine.getId(), initSignal.getArg());
-            case TIMEOUT:
-                return processTimeout(machine.getNs(), machine.getId(), MachineUtil.getMachineEvents(machine, resultType));
-            default:
-                throw new UnsupportedOperationException(String.format("Unsupported signal type, signalType='%s'", signalType));
-        }
-    }
+    protected abstract SignalResultData processSignalInit(String namespace, String machineId, Value args);
 
-    protected abstract SignalResultData processInit(String namespace, String machineId, Value args);
-
-    protected abstract SignalResultData processTimeout(String namespace, String machineId, List<TMachineEvent<T>> events);
+    protected abstract SignalResultData processSignalTimeout(String namespace, String machineId, List<TMachineEvent<T>> events);
 
     protected abstract CallResultData processCall(String namespace, String machineId, Value args, List<TMachineEvent<T>> events);
 
