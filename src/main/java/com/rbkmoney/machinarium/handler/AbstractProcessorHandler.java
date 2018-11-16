@@ -14,11 +14,14 @@ import org.apache.thrift.TException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public abstract class AbstractProcessorHandler<T extends TBase> implements ProcessorSrv.Iface {
+public abstract class AbstractProcessorHandler<A extends TBase, V extends TBase> implements ProcessorSrv.Iface {
 
-    private final Class<T> resultType;
+    private final Class<A> argsType;
 
-    public AbstractProcessorHandler(Class<T> resultType) {
+    private final Class<V> resultType;
+
+    public AbstractProcessorHandler(Class<A> argsType, Class<V> resultType) {
+        this.argsType = argsType;
         this.resultType = resultType;
     }
 
@@ -37,12 +40,16 @@ public abstract class AbstractProcessorHandler<T extends TBase> implements Proce
     @Override
     public CallResult processCall(CallArgs args) throws TException {
         Machine machine = args.getMachine();
-        CallResultData callResult = processCall(machine.getNs(), machine.getId(), args.getArg(), MachineUtil.getMachineEvents(machine, resultType));
-        List<T> newEvents = callResult.getNewEvents();
+        CallResultData<V> callResult = processCall(
+                machine.getNs(),
+                machine.getId(),
+                Geck.msgPackToTBase(args.getArg().getBin(), argsType),
+                MachineUtil.getMachineEvents(machine, resultType)
+        );
 
         return new CallResult(
                 Value.bin(Geck.toMsgPack(callResult.getCallResult())),
-                buildMachineStateChange(newEvents),
+                buildMachineStateChange(callResult.getNewEvents()),
                 callResult.getComplexAction()
         );
     }
@@ -51,7 +58,7 @@ public abstract class AbstractProcessorHandler<T extends TBase> implements Proce
         switch (signalType) {
             case INIT:
                 InitSignal initSignal = args.getSignal().getInit();
-                return processSignalInit(machine.getNs(), machine.getId(), initSignal.getArg());
+                return processSignalInit(machine.getNs(), machine.getId(), Geck.msgPackToTBase(initSignal.getArg().getBin(), argsType));
             case TIMEOUT:
                 return processSignalTimeout(machine.getNs(), machine.getId(), MachineUtil.getMachineEvents(machine, resultType));
             default:
@@ -59,7 +66,7 @@ public abstract class AbstractProcessorHandler<T extends TBase> implements Proce
         }
     }
 
-    private MachineStateChange buildMachineStateChange(List<T> newEvents) {
+    private MachineStateChange buildMachineStateChange(List<V> newEvents) {
         MachineStateChange machineStateChange = new MachineStateChange();
         machineStateChange.setAuxStateLegacy(Value.nl(new Nil())); //??
         machineStateChange.setEventsLegacy(
@@ -70,10 +77,10 @@ public abstract class AbstractProcessorHandler<T extends TBase> implements Proce
         return machineStateChange;
     }
 
-    protected abstract SignalResultData processSignalInit(String namespace, String machineId, Value args);
+    protected abstract SignalResultData<V> processSignalInit(String namespace, String machineId, A args);
 
-    protected abstract SignalResultData processSignalTimeout(String namespace, String machineId, List<TMachineEvent<T>> events);
+    protected abstract SignalResultData<V> processSignalTimeout(String namespace, String machineId, List<TMachineEvent<V>> events);
 
-    protected abstract CallResultData processCall(String namespace, String machineId, Value args, List<TMachineEvent<T>> events);
+    protected abstract CallResultData<V> processCall(String namespace, String machineId, A args, List<TMachineEvent<V>> events);
 
 }

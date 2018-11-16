@@ -1,6 +1,7 @@
 package com.rbkmoney.machinarium;
 
 import com.rbkmoney.machinarium.client.AutomatonClient;
+import com.rbkmoney.machinarium.client.TBaseAutomatonClient;
 import com.rbkmoney.machinarium.domain.CallResultData;
 import com.rbkmoney.machinarium.domain.SignalResultData;
 import com.rbkmoney.machinarium.domain.TMachineEvent;
@@ -39,7 +40,7 @@ public class MachinegunComplexTest {
     public final static String MG_IMAGE = "dr.rbkmoney.com/rbkmoney/machinegun";
     public final static String MG_TAG = "05100794c4432601d22e50754d17312e70597696";
 
-    private AutomatonClient<Value> aClient;
+    private AutomatonClient<Value, Value> aClient;
     private AutomatonSrv.Iface thriftClient;
 
     private HandlerCollection handlerCollection;
@@ -47,20 +48,20 @@ public class MachinegunComplexTest {
     private int serverPort = 8080;
 
 
-    private Servlet testServlet = createThriftRPCService(ProcessorSrv.Iface.class, new AbstractProcessorHandler<Value>(Value.class) {
+    private Servlet testServlet = createThriftRPCService(ProcessorSrv.Iface.class, new AbstractProcessorHandler<Value, Value>(Value.class, Value.class) {
 
         @Override
-        protected SignalResultData processSignalInit(String namespace, String machineId, Value args) {
+        protected SignalResultData<Value> processSignalInit(String namespace, String machineId, Value args) {
             return new SignalResultData(Arrays.asList(args), new ComplexAction());
         }
 
         @Override
-        protected SignalResultData processSignalTimeout(String namespace, String machineId, List<TMachineEvent<Value>> tMachineEvents) {
+        protected SignalResultData<Value> processSignalTimeout(String namespace, String machineId, List<TMachineEvent<Value>> tMachineEvents) {
             return new SignalResultData(Arrays.asList(Value.str("timeout")), new ComplexAction());
         }
 
         @Override
-        protected CallResultData processCall(String namespace, String machineId, Value args, List<TMachineEvent<Value>> tMachineEvents) {
+        protected CallResultData<Value> processCall(String namespace, String machineId, Value args, List<TMachineEvent<Value>> tMachineEvents) {
             return new CallResultData(args, Arrays.asList(args), new ComplexAction());
         }
     });
@@ -84,7 +85,7 @@ public class MachinegunComplexTest {
                 .withAddress(new URI("http://localhost:" + machinegunContainer.getMappedPort(8022) + "/v1/automaton"))
                 .withNetworkTimeout(0)
                 .build(AutomatonSrv.Iface.class);
-        aClient = new AutomatonClient<>(thriftClient, "machinarium", Value.class);
+        aClient = new TBaseAutomatonClient<>(thriftClient, "machinarium", Value.class);
 
         server = new Server(serverPort);
         HandlerCollection contextHandlerCollection = new HandlerCollection(true);
@@ -114,7 +115,7 @@ public class MachinegunComplexTest {
 
     @Test(expected = NamespaceNotFoundException.class)
     public void testNamespaceNotFound() {
-        new AutomatonClient<>(thriftClient, "not_found", Value.class)
+        new TBaseAutomatonClient<>(thriftClient, "not_found", Value.class)
                 .start("kek", Value.b(true));
     }
 

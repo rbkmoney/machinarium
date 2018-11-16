@@ -1,11 +1,10 @@
 package com.rbkmoney.machinarium.domain;
 
 import com.rbkmoney.machinegun.stateproc.ComplexAction;
-import org.apache.thrift.TBase;
 
 import java.util.List;
 
-public class CallResultData<T extends TBase> {
+public class CallResultData<T> {
 
     private final T callResult;
 

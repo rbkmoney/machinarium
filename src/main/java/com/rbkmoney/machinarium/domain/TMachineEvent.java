@@ -4,7 +4,7 @@ import org.apache.thrift.TBase;
 
 import java.time.Instant;
 
-public class TMachineEvent<T extends TBase> {
+public class TMachineEvent<T> {
 
     private final long id;
 
