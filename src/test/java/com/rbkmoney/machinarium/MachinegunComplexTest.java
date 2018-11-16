@@ -70,7 +70,7 @@ public class MachinegunComplexTest {
     public static GenericContainer machinegunContainer = new GenericContainer(MG_IMAGE + ":" + MG_TAG)
             .withExposedPorts(8022)
             .withCopyFileToContainer(
-                    MountableFile.forClasspathResource("machinegun/config.yaml"),
+                    MountableFile.forClasspathResource("/machinegun/config.yaml"),
                     "/opt/machinegun/etc/config.yaml"
             )
             .waitingFor(
