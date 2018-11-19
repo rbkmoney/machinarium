@@ -8,48 +8,35 @@ import com.rbkmoney.machinarium.domain.TMachineEvent;
 import com.rbkmoney.machinarium.exception.MachineAlreadyExistsException;
 import com.rbkmoney.machinarium.exception.NamespaceNotFoundException;
 import com.rbkmoney.machinarium.handler.AbstractProcessorHandler;
-import com.rbkmoney.machinegun.base.Timer;
 import com.rbkmoney.machinegun.msgpack.Value;
-import com.rbkmoney.machinegun.stateproc.*;
-import com.rbkmoney.woody.thrift.impl.http.THServiceBuilder;
+import com.rbkmoney.machinegun.stateproc.AutomatonSrv;
+import com.rbkmoney.machinegun.stateproc.ComplexAction;
+import com.rbkmoney.machinegun.stateproc.ProcessorSrv;
 import com.rbkmoney.woody.thrift.impl.http.THSpawnClientBuilder;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.HandlerCollection;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
-import org.junit.After;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.BindMode;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
-import org.testcontainers.utility.MountableFile;
 
 import javax.servlet.Servlet;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.fail;
 
-public class MachinegunComplexTest {
+public class MachinegunComplexTest extends AbstractTest {
 
-    public final static String MG_IMAGE = "dr.rbkmoney.com/rbkmoney/machinegun";
-    public final static String MG_TAG = "05100794c4432601d22e50754d17312e70597696";
+    private final String automatonPath = "/v1/automaton";
+    private final String processorPath = "/v1/processor";
 
     private AutomatonClient<Value, Value> aClient;
     private AutomatonSrv.Iface thriftClient;
 
-    private HandlerCollection handlerCollection;
-    private Server server;
-    private int serverPort = 8080;
 
-
-    private Servlet testServlet = createThriftRPCService(ProcessorSrv.Iface.class, new AbstractProcessorHandler<Value, Value>(Value.class, Value.class) {
+    private Servlet processorServlet = createThriftRPCService(ProcessorSrv.Iface.class, new AbstractProcessorHandler<Value, Value>(Value.class, Value.class) {
 
         @Override
         protected SignalResultData<Value> processSignalInit(String namespace, String machineId, Value args) {
@@ -67,51 +54,21 @@ public class MachinegunComplexTest {
         }
     });
 
-    @ClassRule
-    public static GenericContainer machinegunContainer = new GenericContainer(MG_IMAGE + ":" + MG_TAG)
-            .withExposedPorts(8022)
-            .withClasspathResourceMapping(
-                    "/machinegun/config.yaml",
-                    "/opt/machinegun/etc/config.yaml",
-                    BindMode.READ_ONLY
-            ).waitingFor(
-                    new HttpWaitStrategy()
-                            .forPath("/health")
-                            .forStatusCode(200)
-            );
-
     @Before
     public void setup() throws Exception {
+        startServer();
+
+        Servlet automatonServlet = createThriftRPCService(AutomatonSrv.Iface.class, new AutomatonMockSrvImpl(buildURI(processorPath)));
+        Map<String, Servlet> servlets = new HashMap<>();
+        servlets.put(automatonPath, automatonServlet);
+        servlets.put(processorPath, processorServlet);
+        addServlets(servlets);
+
         thriftClient = new THSpawnClientBuilder()
-                .withAddress(new URI("http://localhost:" + machinegunContainer.getMappedPort(8022) + "/v1/automaton"))
+                .withAddress(buildURI(automatonPath))
                 .withNetworkTimeout(0)
                 .build(AutomatonSrv.Iface.class);
         aClient = new TBaseAutomatonClient<>(thriftClient, "machinarium", Value.class);
-
-        server = new Server(serverPort);
-        HandlerCollection contextHandlerCollection = new HandlerCollection(true);
-        this.handlerCollection = contextHandlerCollection;
-        server.setHandler(contextHandlerCollection);
-
-        server.start();
-        addServlet(testServlet, "/v1/processor");
-    }
-
-    protected void addServlet(Servlet servlet, String mapping) {
-        try {
-            ServletContextHandler context = new ServletContextHandler();
-            ServletHolder defaultServ = new ServletHolder(mapping, servlet);
-            context.addServlet(defaultServ, mapping);
-            handlerCollection.addHandler(context);
-            context.start();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected <T> Servlet createThriftRPCService(Class<T> iface, T handler) {
-        THServiceBuilder serviceBuilder = new THServiceBuilder();
-        return serviceBuilder.build(iface, handler);
     }
 
     @Test(expected = NamespaceNotFoundException.class)
@@ -145,15 +102,6 @@ public class MachinegunComplexTest {
         assertEquals(2, events.size());
         assertEquals(Value.b(true), events.get(0).getData());
         assertEquals(Value.b(false), events.get(1).getData());
-    }
-
-    @After
-    public void stopJetty() {
-        try {
-            server.stop();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
 
