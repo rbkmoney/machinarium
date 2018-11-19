@@ -23,6 +23,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
@@ -69,11 +70,11 @@ public class MachinegunComplexTest {
     @ClassRule
     public static GenericContainer machinegunContainer = new GenericContainer(MG_IMAGE + ":" + MG_TAG)
             .withExposedPorts(8022)
-            .withCopyFileToContainer(
-                    MountableFile.forClasspathResource("/machinegun/config.yaml"),
-                    "/opt/machinegun/etc/config.yaml"
-            )
-            .waitingFor(
+            .withClasspathResourceMapping(
+                    "/machinegun/config.yaml",
+                    "/opt/machinegun/etc/config.yaml",
+                    BindMode.READ_ONLY
+            ).waitingFor(
                     new HttpWaitStrategy()
                             .forPath("/health")
                             .forStatusCode(200)
