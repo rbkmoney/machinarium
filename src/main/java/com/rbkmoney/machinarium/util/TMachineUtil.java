@@ -11,18 +11,21 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class MachineUtil {
+public class TMachineUtil {
 
     public static <T extends TBase> List<TMachineEvent<T>> getMachineEvents(Machine machine, Class<T> eventType) {
         return machine.getHistory().stream()
                 .sorted(Comparator.comparingLong(Event::getId))
-                .map(
-                        event -> new TMachineEvent<>(
-                                event.getId(),
-                                Instant.parse(event.getCreatedAt()),
-                                Geck.msgPackToTBase(event.getData().getBin(), eventType)
-                        )
-                ).collect(Collectors.toList());
+                .map(event -> eventToTMachineEvent(event, eventType))
+                .collect(Collectors.toList());
+    }
+
+    public static <T extends TBase> TMachineEvent<T> eventToTMachineEvent(Event event, Class<T> eventType) {
+        return new TMachineEvent<>(
+                event.getId(),
+                Instant.parse(event.getCreatedAt()),
+                Geck.msgPackToTBase(event.getData().getBin(), eventType)
+        );
     }
 
 }

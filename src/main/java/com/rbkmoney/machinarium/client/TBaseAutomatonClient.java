@@ -3,7 +3,7 @@ package com.rbkmoney.machinarium.client;
 import com.rbkmoney.geck.serializer.Geck;
 import com.rbkmoney.machinarium.domain.TMachineEvent;
 import com.rbkmoney.machinarium.exception.*;
-import com.rbkmoney.machinarium.util.MachineUtil;
+import com.rbkmoney.machinarium.util.TMachineUtil;
 import com.rbkmoney.machinegun.msgpack.Value;
 import com.rbkmoney.machinegun.stateproc.*;
 import org.apache.thrift.TBase;
@@ -74,7 +74,7 @@ public class TBaseAutomatonClient<A extends TBase, V extends TBase> implements A
     @Override
     public List<TMachineEvent<V>> getEvents(String machineId) throws MachineNotFoundException, NamespaceNotFoundException {
         Machine machine = getMachine(machineId);
-        return MachineUtil.getMachineEvents(machine, resultType);
+        return TMachineUtil.getMachineEvents(machine, resultType);
     }
 
 }

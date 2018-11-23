@@ -4,7 +4,7 @@ import com.rbkmoney.geck.serializer.Geck;
 import com.rbkmoney.machinarium.domain.CallResultData;
 import com.rbkmoney.machinarium.domain.SignalResultData;
 import com.rbkmoney.machinarium.domain.TMachineEvent;
-import com.rbkmoney.machinarium.util.MachineUtil;
+import com.rbkmoney.machinarium.util.TMachineUtil;
 import com.rbkmoney.machinegun.msgpack.Nil;
 import com.rbkmoney.machinegun.msgpack.Value;
 import com.rbkmoney.machinegun.stateproc.*;
@@ -44,7 +44,7 @@ public abstract class AbstractProcessorHandler<A extends TBase, V extends TBase>
                 machine.getNs(),
                 machine.getId(),
                 Geck.msgPackToTBase(args.getArg().getBin(), argsType),
-                MachineUtil.getMachineEvents(machine, resultType)
+                TMachineUtil.getMachineEvents(machine, resultType)
         );
 
         return new CallResult(
@@ -60,7 +60,7 @@ public abstract class AbstractProcessorHandler<A extends TBase, V extends TBase>
                 InitSignal initSignal = args.getSignal().getInit();
                 return processSignalInit(machine.getNs(), machine.getId(), Geck.msgPackToTBase(initSignal.getArg().getBin(), argsType));
             case TIMEOUT:
-                return processSignalTimeout(machine.getNs(), machine.getId(), MachineUtil.getMachineEvents(machine, resultType));
+                return processSignalTimeout(machine.getNs(), machine.getId(), TMachineUtil.getMachineEvents(machine, resultType));
             default:
                 throw new UnsupportedOperationException(String.format("Unsupported signal type, signalType='%s'", signalType));
         }
