@@ -9,13 +9,11 @@ import com.rbkmoney.machinegun.stateproc.EventSinkSrv;
 import com.rbkmoney.machinegun.stateproc.HistoryRange;
 import com.rbkmoney.machinegun.stateproc.SinkEvent;
 import org.apache.thrift.TException;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -30,8 +28,8 @@ public class TBaseEventSinkClientTest {
 
     HistoryRange range;
 
-    @Before
-    public void setup() throws TException {
+    @Test
+    public void testGetEventsWithoutAfter() throws TException {
         client = mock(EventSinkSrv.Iface.class);
         range = new HistoryRange();
         range.setLimit(10);
@@ -50,14 +48,40 @@ public class TBaseEventSinkClientTest {
 
                         )
                 ));
-    }
 
-    @Test
-    public void testGetEvents() {
         TBaseEventSinkClient<Value> tBaseEventSinkClient = new TBaseEventSinkClient<>(client, "test", Value.class);
-        List<TSinkEvent<Value>> events = tBaseEventSinkClient.getEvents(Optional.empty(), range.getLimit());
+        List<TSinkEvent<Value>> events = tBaseEventSinkClient.getEvents(null, range.getLimit());
         assertFalse(events.isEmpty());
         assertEquals(Value.b(true), events.get(0).getEvent().getData());
     }
+
+    @Test
+    public void testGetEventsWithAfter() throws TException {
+        client = mock(EventSinkSrv.Iface.class);
+        range = new HistoryRange();
+        range.setAfter(1);
+        range.setLimit(10);
+
+        when(client.getHistory(any(), eq(range)))
+                .thenReturn(Arrays.asList(
+                        new SinkEvent(
+                                1L,
+                                "source_id",
+                                "source_namespace",
+                                new Event(
+                                        1L,
+                                        Instant.now().toString(),
+                                        Value.bin(Geck.toMsgPack(Value.b(true)))
+                                )
+
+                        )
+                ));
+
+        TBaseEventSinkClient<Value> tBaseEventSinkClient = new TBaseEventSinkClient<>(client, "test", Value.class);
+        List<TSinkEvent<Value>> events = tBaseEventSinkClient.getEvents(1L, range.getLimit());
+        assertFalse(events.isEmpty());
+        assertEquals(Value.b(true), events.get(0).getEvent().getData());
+    }
+
 
 }
