@@ -35,7 +35,7 @@ public class TBaseEventSinkClient<T extends TBase> implements EventSinkClient<T>
         try {
             return client.getHistory(eventSinkId, historyRange).stream()
                     .sorted(Comparator.comparingLong(SinkEvent::getId))
-                    .map(sinkEvent -> new TSinkEvent(
+                    .map(sinkEvent -> new TSinkEvent<>(
                             sinkEvent.getId(),
                             sinkEvent.getSourceNs(),
                             sinkEvent.getSourceId(),
