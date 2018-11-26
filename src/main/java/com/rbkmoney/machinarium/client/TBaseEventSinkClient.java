@@ -3,13 +3,15 @@ package com.rbkmoney.machinarium.client;
 import com.rbkmoney.machinarium.domain.TSinkEvent;
 import com.rbkmoney.machinarium.exception.EventSinkNotFoundException;
 import com.rbkmoney.machinarium.util.TMachineUtil;
-import com.rbkmoney.machinegun.stateproc.*;
+import com.rbkmoney.machinegun.stateproc.EventSinkNotFound;
+import com.rbkmoney.machinegun.stateproc.EventSinkSrv;
+import com.rbkmoney.machinegun.stateproc.HistoryRange;
+import com.rbkmoney.machinegun.stateproc.SinkEvent;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class TBaseEventSinkClient<T extends TBase> implements EventSinkClient<T> {
