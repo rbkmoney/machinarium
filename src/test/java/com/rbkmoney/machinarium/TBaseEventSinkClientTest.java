@@ -50,7 +50,7 @@ public class TBaseEventSinkClientTest {
                 ));
 
         TBaseEventSinkClient<Value> tBaseEventSinkClient = new TBaseEventSinkClient<>(client, "test", Value.class);
-        List<TSinkEvent<Value>> events = tBaseEventSinkClient.getEvents(null, range.getLimit());
+        List<TSinkEvent<Value>> events = tBaseEventSinkClient.getEvents(range.getLimit());
         assertFalse(events.isEmpty());
         assertEquals(Value.b(true), events.get(0).getEvent().getData());
     }

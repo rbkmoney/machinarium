@@ -6,6 +6,8 @@ import java.util.List;
 
 public interface EventSinkClient<T> {
 
-    List<TSinkEvent<T>> getEvents(Long after, int limit);
+    List<TSinkEvent<T>> getEvents(int limit);
+
+    List<TSinkEvent<T>> getEvents(long after, int limit);
 
 }
