@@ -37,7 +37,7 @@ public class TBaseEventSinkClient<T extends TBase> implements EventSinkClient<T>
     }
 
     @Override
-    public List<TSinkEvent<T>> getEvents(long after, int limit) {
+    public List<TSinkEvent<T>> getEvents(int limit, long after) {
         HistoryRange historyRange = new HistoryRange();
         historyRange.setAfter(after);
         historyRange.setLimit(limit);
