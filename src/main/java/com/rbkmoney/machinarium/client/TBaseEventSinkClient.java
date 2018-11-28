@@ -46,21 +46,29 @@ public class TBaseEventSinkClient<T extends TBase> implements EventSinkClient<T>
     }
 
     private List<TSinkEvent<T>> getEvents(HistoryRange historyRange) {
-
         try {
             return client.getHistory(eventSinkId, historyRange).stream()
                     .sorted(Comparator.comparingLong(SinkEvent::getId))
-                    .map(sinkEvent -> new TSinkEvent<>(
-                            sinkEvent.getId(),
-                            sinkEvent.getSourceNs(),
-                            sinkEvent.getSourceId(),
-                            TMachineUtil.eventToTMachineEvent(sinkEvent.getEvent(), eventType)
-                    )).collect(Collectors.toList());
+                    .map(this::buildTSinkEvent)
+                    .collect(Collectors.toList());
         } catch (EventSinkNotFound ex) {
             throw new EventSinkNotFoundException(String.format("Event sink not found, eventSinkId='%s'", eventSinkId), ex);
         } catch (TException ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    private TSinkEvent<T> buildTSinkEvent(SinkEvent sinkEvent) {
+        return buildTSinkEvent(sinkEvent, eventType);
+    }
+
+    private TSinkEvent<T> buildTSinkEvent(SinkEvent sinkEvent, Class<T> eventType) {
+        return new TSinkEvent<>(
+                sinkEvent.getId(),
+                sinkEvent.getSourceNs(),
+                sinkEvent.getSourceId(),
+                TMachineUtil.eventToTMachineEvent(sinkEvent.getEvent(), eventType)
+        );
     }
 
 }
