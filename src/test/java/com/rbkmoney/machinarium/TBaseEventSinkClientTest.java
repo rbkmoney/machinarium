@@ -35,19 +35,7 @@ public class TBaseEventSinkClientTest {
         range.setLimit(10);
 
         when(client.getHistory(any(), eq(range)))
-                .thenReturn(Arrays.asList(
-                        new SinkEvent(
-                                1L,
-                                "source_id",
-                                "source_namespace",
-                                new Event(
-                                        1L,
-                                        Instant.now().toString(),
-                                        Value.bin(Geck.toMsgPack(Value.b(true)))
-                                )
-
-                        )
-                ));
+                .thenReturn(buildSinkEvents());
 
         TBaseEventSinkClient<Value> tBaseEventSinkClient = new TBaseEventSinkClient<>(client, "test", Value.class);
         List<TSinkEvent<Value>> events = tBaseEventSinkClient.getEvents(range.getLimit());
@@ -63,24 +51,28 @@ public class TBaseEventSinkClientTest {
         range.setLimit(10);
 
         when(client.getHistory(any(), eq(range)))
-                .thenReturn(Arrays.asList(
-                        new SinkEvent(
-                                1L,
-                                "source_id",
-                                "source_namespace",
-                                new Event(
-                                        1L,
-                                        Instant.now().toString(),
-                                        Value.bin(Geck.toMsgPack(Value.b(true)))
-                                )
-
-                        )
-                ));
+                .thenReturn(buildSinkEvents());
 
         TBaseEventSinkClient<Value> tBaseEventSinkClient = new TBaseEventSinkClient<>(client, "test", Value.class);
         List<TSinkEvent<Value>> events = tBaseEventSinkClient.getEvents(range.getLimit(), 1L);
         assertFalse(events.isEmpty());
         assertEquals(Value.b(true), events.get(0).getEvent().getData());
+    }
+
+    private List<SinkEvent> buildSinkEvents() {
+        return Arrays.asList(
+                new SinkEvent(
+                        1L,
+                        "source_id",
+                        "source_namespace",
+                        new Event(
+                                1L,
+                                Instant.now().toString(),
+                                Value.bin(Geck.toMsgPack(Value.b(true)))
+                        )
+
+                )
+        );
     }
 
 
