@@ -53,7 +53,7 @@ public class TBaseEventSinkClient<T extends TBase> implements EventSinkClient<T>
             return client.getHistory(eventSinkId, historyRange).stream()
                     .findFirst().map(event -> event.getEvent().getId());
         } catch (EventSinkNotFound ex) {
-            throw new EventSinkNotFoundException(String.format("Event sink not found, eventSinkId='%s'", eventSinkId), ex);
+            throw new EventSinkNotFoundException(ex, eventSinkId);
         } catch (TException ex) {
             throw new RuntimeException(ex);
         }
@@ -66,7 +66,7 @@ public class TBaseEventSinkClient<T extends TBase> implements EventSinkClient<T>
                     .map(this::buildTSinkEvent)
                     .collect(Collectors.toList());
         } catch (EventSinkNotFound ex) {
-            throw new EventSinkNotFoundException(String.format("Event sink not found, eventSinkId='%s'", eventSinkId), ex);
+            throw new EventSinkNotFoundException(ex, eventSinkId);
         } catch (TException ex) {
             throw new RuntimeException(ex);
         }
