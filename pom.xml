@@ -12,7 +12,7 @@
 
     <groupId>com.rbkmoney</groupId>
     <artifactId>machinarium</artifactId>
-    <version>0.2.0</version>
+    <version>0.2.5</version>
 
     <description>Machinegun java client/processor handler lib</description>
 
