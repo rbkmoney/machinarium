@@ -29,7 +29,7 @@ public abstract class AbstractProcessorHandler<A extends TBase, V extends TBase>
     public SignalResult processSignal(SignalArgs args) throws TException {
         Signal._Fields signalType = args.getSignal().getSetField();
         Machine machine = args.getMachine();
-        SignalResultData signalResult = processSignal(signalType, args, machine);
+        SignalResultData<V> signalResult = processSignal(signalType, args, machine);
 
         return new SignalResult(
                 buildMachineStateChange(signalResult.getNewEvents()),
@@ -54,7 +54,7 @@ public abstract class AbstractProcessorHandler<A extends TBase, V extends TBase>
         );
     }
 
-    private SignalResultData processSignal(Signal._Fields signalType, SignalArgs args, Machine machine) {
+    private SignalResultData<V> processSignal(Signal._Fields signalType, SignalArgs args, Machine machine) {
         switch (signalType) {
             case INIT:
                 InitSignal initSignal = args.getSignal().getInit();
@@ -68,12 +68,11 @@ public abstract class AbstractProcessorHandler<A extends TBase, V extends TBase>
 
     private MachineStateChange buildMachineStateChange(List<V> newEvents) {
         MachineStateChange machineStateChange = new MachineStateChange();
-        machineStateChange.setAuxStateLegacy(Value.nl(new Nil())); //??
-        machineStateChange.setEventsLegacy(
-                newEvents.stream()
-                        .map(event -> Value.bin(Geck.toMsgPack(event)))
-                        .collect(Collectors.toList())
-        );
+        machineStateChange.setAuxState(new Content(Value.nl(new Nil())));
+        List<Content> contentList = newEvents.stream()
+                .map(event -> new Content(Value.bin(Geck.toMsgPack(event))))
+                .collect(Collectors.toList());
+        machineStateChange.setEvents(contentList);
         return machineStateChange;
     }
 

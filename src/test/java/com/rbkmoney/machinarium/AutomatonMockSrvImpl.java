@@ -1,5 +1,6 @@
 package com.rbkmoney.machinarium;
 
+import com.rbkmoney.geck.serializer.Geck;
 import com.rbkmoney.machinegun.msgpack.Value;
 import com.rbkmoney.machinegun.stateproc.*;
 import com.rbkmoney.woody.thrift.impl.http.THSpawnClientBuilder;
@@ -43,12 +44,12 @@ public class AutomatonMockSrvImpl implements AutomatonSrv.Iface {
         Machine machine = new Machine(ns, id, new ArrayList<>(), new HistoryRange());
         SignalResult signalResult = client.processSignal(new SignalArgs(Signal.init(new InitSignal(args)), machine));
         machine.setHistory(
-                signalResult.getChange().getEventsLegacy()
+                signalResult.getChange().getEvents()
                         .stream().map(
                         event -> new Event(
                                 eventIdCounter.getAndIncrement(),
                                 Instant.now().toString(),
-                                event
+                                event.getData()
                         )
                 ).collect(Collectors.toList())
         );
@@ -83,12 +84,12 @@ public class AutomatonMockSrvImpl implements AutomatonSrv.Iface {
         CallResult callResult = client.processCall(new CallArgs(args, machine));
         List<Event> events = machine.getHistory();
         events.addAll(
-                callResult.getChange().getEventsLegacy()
+                callResult.getChange().getEvents()
                         .stream().map(
                         event -> new Event(
                                 eventIdCounter.getAndIncrement(),
                                 Instant.now().toString(),
-                                event
+                                event.getData()
                         )
                 ).collect(Collectors.toList())
         );

@@ -4,6 +4,8 @@ import com.rbkmoney.geck.serializer.Geck;
 import com.rbkmoney.machinarium.domain.TMachineEvent;
 import com.rbkmoney.machinegun.stateproc.Event;
 import com.rbkmoney.machinegun.stateproc.Machine;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.apache.thrift.TBase;
 
 import java.time.Instant;
@@ -11,6 +13,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class TMachineUtil {
 
     public static <T extends TBase> List<TMachineEvent<T>> getMachineEvents(Machine machine, Class<T> eventType) {
