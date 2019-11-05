@@ -8,11 +8,9 @@ import com.rbkmoney.machinarium.domain.TMachineEvent;
 import com.rbkmoney.machinarium.exception.MachineAlreadyExistsException;
 import com.rbkmoney.machinarium.exception.NamespaceNotFoundException;
 import com.rbkmoney.machinarium.handler.AbstractProcessorHandler;
+import com.rbkmoney.machinegun.msgpack.Nil;
 import com.rbkmoney.machinegun.msgpack.Value;
-import com.rbkmoney.machinegun.stateproc.AutomatonSrv;
-import com.rbkmoney.machinegun.stateproc.ComplexAction;
-import com.rbkmoney.machinegun.stateproc.HistoryRange;
-import com.rbkmoney.machinegun.stateproc.ProcessorSrv;
+import com.rbkmoney.machinegun.stateproc.*;
 import com.rbkmoney.woody.thrift.impl.http.THSpawnClientBuilder;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,18 +36,18 @@ public class MachinegunComplexTest extends AbstractTest {
     private Servlet processorServlet = createThriftRPCService(ProcessorSrv.Iface.class, new AbstractProcessorHandler<Value, Value>(Value.class, Value.class) {
 
         @Override
-        protected SignalResultData<Value> processSignalInit(String namespace, String machineId, Value args) {
-            return new SignalResultData(Arrays.asList(args), new ComplexAction());
+        protected SignalResultData<Value> processSignalInit(String namespace, String machineId, Content machineState, Value args) {
+            return new SignalResultData(Value.nl(new Nil()), Arrays.asList(args), new ComplexAction());
         }
 
         @Override
-        protected SignalResultData<Value> processSignalTimeout(String namespace, String machineId, List<TMachineEvent<Value>> tMachineEvents) {
-            return new SignalResultData(Arrays.asList(Value.str("timeout")), new ComplexAction());
+        protected SignalResultData<Value> processSignalTimeout(String namespace, String machineId, Content machineState, List<TMachineEvent<Value>> tMachineEvents) {
+            return new SignalResultData(Value.nl(new Nil()), Arrays.asList(Value.str("timeout")), new ComplexAction());
         }
 
         @Override
         protected CallResultData<Value> processCall(String namespace, String machineId, Value args, List<TMachineEvent<Value>> tMachineEvents) {
-            return new CallResultData(args, Arrays.asList(args), new ComplexAction());
+            return new CallResultData(Value.nl(new Nil()), args, Arrays.asList(args), new ComplexAction());
         }
     });
 

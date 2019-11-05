@@ -2,6 +2,7 @@ package com.rbkmoney.machinarium.util;
 
 import com.rbkmoney.geck.serializer.Geck;
 import com.rbkmoney.machinarium.domain.TMachineEvent;
+import com.rbkmoney.machinegun.msgpack.Value;
 import com.rbkmoney.machinegun.stateproc.Event;
 import com.rbkmoney.machinegun.stateproc.Machine;
 import lombok.AccessLevel;
@@ -27,8 +28,15 @@ public class TMachineUtil {
         return new TMachineEvent<>(
                 event.getId(),
                 Instant.parse(event.getCreatedAt()),
-                Geck.msgPackToTBase(event.getData().getBin(), eventType)
+                msgPackToTBase(event.getData(), eventType)
         );
+    }
+
+    private static <T extends TBase> T msgPackToTBase(Value data, Class<T> eventType) {
+        if (data.isSetBin()) {
+            return Geck.msgPackToTBase(data.getBin(), eventType);
+        }
+        return null;
     }
 
 }

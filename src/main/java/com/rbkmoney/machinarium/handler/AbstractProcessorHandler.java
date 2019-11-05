@@ -5,7 +5,6 @@ import com.rbkmoney.machinarium.domain.CallResultData;
 import com.rbkmoney.machinarium.domain.SignalResultData;
 import com.rbkmoney.machinarium.domain.TMachineEvent;
 import com.rbkmoney.machinarium.util.TMachineUtil;
-import com.rbkmoney.machinegun.msgpack.Nil;
 import com.rbkmoney.machinegun.msgpack.Value;
 import com.rbkmoney.machinegun.stateproc.*;
 import org.apache.thrift.TBase;
@@ -32,7 +31,7 @@ public abstract class AbstractProcessorHandler<A extends TBase, V extends TBase>
         SignalResultData<V> signalResult = processSignal(signalType, args, machine);
 
         return new SignalResult(
-                buildMachineStateChange(signalResult.getNewEvents()),
+                buildMachineStateChange(signalResult.getState(), signalResult.getNewEvents()),
                 signalResult.getComplexAction()
         );
     }
@@ -49,7 +48,7 @@ public abstract class AbstractProcessorHandler<A extends TBase, V extends TBase>
 
         return new CallResult(
                 Value.bin(Geck.toMsgPack(callResult.getCallResult())),
-                buildMachineStateChange(callResult.getNewEvents()),
+                buildMachineStateChange(callResult.getState(), callResult.getNewEvents()),
                 callResult.getComplexAction()
         );
     }
@@ -58,17 +57,17 @@ public abstract class AbstractProcessorHandler<A extends TBase, V extends TBase>
         switch (signalType) {
             case INIT:
                 InitSignal initSignal = args.getSignal().getInit();
-                return processSignalInit(machine.getNs(), machine.getId(), Geck.msgPackToTBase(initSignal.getArg().getBin(), argsType));
+                return processSignalInit(machine.getNs(), machine.getId(), machine.getAuxState(), Geck.msgPackToTBase(initSignal.getArg().getBin(), argsType));
             case TIMEOUT:
-                return processSignalTimeout(machine.getNs(), machine.getId(), TMachineUtil.getMachineEvents(machine, resultType));
+                return processSignalTimeout(machine.getNs(), machine.getId(), machine.getAuxState(), TMachineUtil.getMachineEvents(machine, resultType));
             default:
                 throw new UnsupportedOperationException(String.format("Unsupported signal type, signalType='%s'", signalType));
         }
     }
 
-    private MachineStateChange buildMachineStateChange(List<V> newEvents) {
+    private MachineStateChange buildMachineStateChange(Value state, List<V> newEvents) {
         MachineStateChange machineStateChange = new MachineStateChange();
-        machineStateChange.setAuxState(new Content(Value.nl(new Nil())));
+        machineStateChange.setAuxState(new Content(state));
         List<Content> contentList = newEvents.stream()
                 .map(event -> new Content(Value.bin(Geck.toMsgPack(event))))
                 .collect(Collectors.toList());
@@ -76,9 +75,9 @@ public abstract class AbstractProcessorHandler<A extends TBase, V extends TBase>
         return machineStateChange;
     }
 
-    protected abstract SignalResultData<V> processSignalInit(String namespace, String machineId, A args);
+    protected abstract SignalResultData<V> processSignalInit(String namespace, String machineId, Content machineState, A args);
 
-    protected abstract SignalResultData<V> processSignalTimeout(String namespace, String machineId, List<TMachineEvent<V>> events);
+    protected abstract SignalResultData<V> processSignalTimeout(String namespace, String machineId, Content machineState, List<TMachineEvent<V>> events);
 
     protected abstract CallResultData<V> processCall(String namespace, String machineId, A args, List<TMachineEvent<V>> events);
 
