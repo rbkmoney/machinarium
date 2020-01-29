@@ -4,6 +4,7 @@ import com.rbkmoney.machinarium.client.AutomatonClient;
 import com.rbkmoney.machinarium.client.TBaseAutomatonClient;
 import com.rbkmoney.machinarium.domain.CallResultData;
 import com.rbkmoney.machinarium.domain.SignalResultData;
+import com.rbkmoney.machinarium.domain.TMachine;
 import com.rbkmoney.machinarium.domain.TMachineEvent;
 import com.rbkmoney.machinarium.exception.MachineAlreadyExistsException;
 import com.rbkmoney.machinarium.exception.NamespaceNotFoundException;
@@ -36,12 +37,12 @@ public class MachinegunComplexTest extends AbstractTest {
     private Servlet processorServlet = createThriftRPCService(ProcessorSrv.Iface.class, new AbstractProcessorHandler<Value, Value>(Value.class, Value.class) {
 
         @Override
-        protected SignalResultData<Value> processSignalInit(String namespace, String machineId, Content machineState, Value args) {
+        protected SignalResultData<Value> processSignalInit(TMachine machine, Value args) {
             return new SignalResultData(Value.nl(new Nil()), Arrays.asList(args), new ComplexAction());
         }
 
         @Override
-        protected SignalResultData<Value> processSignalTimeout(String namespace, String machineId, Content machineState, List<TMachineEvent<Value>> tMachineEvents) {
+        protected SignalResultData<Value> processSignalTimeout(TMachine machine, List<TMachineEvent<Value>> tMachineEvents) {
             return new SignalResultData(Value.nl(new Nil()), Arrays.asList(Value.str("timeout")), new ComplexAction());
         }
 

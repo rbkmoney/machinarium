@@ -3,6 +3,7 @@ package com.rbkmoney.machinarium.handler;
 import com.rbkmoney.geck.serializer.Geck;
 import com.rbkmoney.machinarium.domain.CallResultData;
 import com.rbkmoney.machinarium.domain.SignalResultData;
+import com.rbkmoney.machinarium.domain.TMachine;
 import com.rbkmoney.machinarium.domain.TMachineEvent;
 import com.rbkmoney.machinarium.util.TMachineUtil;
 import com.rbkmoney.machinegun.msgpack.Value;
@@ -54,15 +55,21 @@ public abstract class AbstractProcessorHandler<A extends TBase, V extends TBase>
     }
 
     private SignalResultData<V> processSignal(Signal._Fields signalType, SignalArgs args, Machine machine) {
+        TMachine tMachine = new TMachine(machine.getNs(), machine.getId(), machine.getTimer(), machine.getAuxState());
         switch (signalType) {
             case INIT:
                 InitSignal initSignal = args.getSignal().getInit();
-                return processSignalInit(machine.getNs(), machine.getId(), machine.getAuxState(), Geck.msgPackToTBase(initSignal.getArg().getBin(), argsType));
+                return processSignalInit(tMachine, Geck.msgPackToTBase(initSignal.getArg().getBin(), argsType));
             case TIMEOUT:
-                return processSignalTimeout(machine.getNs(), machine.getId(), machine.getAuxState(), TMachineUtil.getMachineEvents(machine, resultType));
+                return processSignalTimeout(tMachine, TMachineUtil.getMachineEvents(machine, resultType));
             default:
                 throw new UnsupportedOperationException(String.format("Unsupported signal type, signalType='%s'", signalType));
         }
+    }
+
+    @Override
+    public RepairResult processRepair(RepairArgs repairArgs) throws RepairFailed, TException {
+        throw new UnsupportedOperationException("processRepair not implemented");
     }
 
     private MachineStateChange buildMachineStateChange(Value state, List<V> newEvents) {
@@ -75,9 +82,9 @@ public abstract class AbstractProcessorHandler<A extends TBase, V extends TBase>
         return machineStateChange;
     }
 
-    protected abstract SignalResultData<V> processSignalInit(String namespace, String machineId, Content machineState, A args);
+    protected abstract SignalResultData<V> processSignalInit(TMachine machine, A args);
 
-    protected abstract SignalResultData<V> processSignalTimeout(String namespace, String machineId, Content machineState, List<TMachineEvent<V>> events);
+    protected abstract SignalResultData<V> processSignalTimeout(TMachine machine, List<TMachineEvent<V>> events);
 
     protected abstract CallResultData<V> processCall(String namespace, String machineId, A args, List<TMachineEvent<V>> events);
 

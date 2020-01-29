@@ -11,7 +11,7 @@
     </parent>
 
     <artifactId>machinarium</artifactId>
-    <version>0.2.8</version>
+    <version>0.2.9</version>
 
     <description>Machinegun java client/processor handler lib</description>
 
@@ -19,7 +19,7 @@
         <dependency>
             <groupId>com.rbkmoney</groupId>
             <artifactId>machinegun-proto</artifactId>
-            <version>1.13-9a32c53</version>
+            <version>1.15-eac772b</version>
         </dependency>
         <dependency>
             <groupId>com.rbkmoney.woody</groupId>

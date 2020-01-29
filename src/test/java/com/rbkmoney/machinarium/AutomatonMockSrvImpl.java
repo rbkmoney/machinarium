@@ -57,7 +57,7 @@ public class AutomatonMockSrvImpl implements AutomatonSrv.Iface {
     }
 
     @Override
-    public void repair(MachineDescriptor desc, Value a) throws NamespaceNotFound, MachineNotFound, MachineFailed, MachineAlreadyWorking, TException {
+    public Value repair(MachineDescriptor desc, Value a) throws NamespaceNotFound, MachineNotFound, MachineFailed, MachineAlreadyWorking, TException {
         throw new UnsupportedOperationException("Not implemented");
     }
 
