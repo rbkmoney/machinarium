@@ -1,5 +1,7 @@
 package com.rbkmoney.machinarium.handler;
 
+import com.rbkmoney.geck.common.util.StringUtil;
+import com.rbkmoney.geck.common.util.TypeUtil;
 import com.rbkmoney.geck.serializer.Geck;
 import com.rbkmoney.machinarium.domain.CallResultData;
 import com.rbkmoney.machinarium.domain.SignalResultData;
@@ -11,6 +13,8 @@ import com.rbkmoney.machinegun.stateproc.*;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 
+import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -55,12 +59,22 @@ public abstract class AbstractProcessorHandler<A extends TBase, V extends TBase>
     }
 
     private SignalResultData<V> processSignal(Signal._Fields signalType, SignalArgs args, Machine machine) {
-        TMachine tMachine = new TMachine(machine.getNs(), machine.getId(), machine.getTimer(), machine.getAuxState());
+        Instant machineTimer = null;
+        if (machine.getTimer() != null && !machine.getTimer().isEmpty()) {
+            machineTimer = TypeUtil.stringToInstant(machine.getTimer());
+        }
+        TMachine<V> tMachine = null;
         switch (signalType) {
             case INIT:
                 InitSignal initSignal = args.getSignal().getInit();
-                return processSignalInit(tMachine, Geck.msgPackToTBase(initSignal.getArg().getBin(), argsType));
+                A arg = Geck.msgPackToTBase(initSignal.getArg().getBin(), argsType);
+                tMachine = new TMachine<>(machine.getNs(), machine.getId(), machineTimer, machine.getAuxState(), Collections.emptyList());
+
+                return processSignalInit(tMachine, arg);
             case TIMEOUT:
+                List<TMachineEvent<V>> machineEvents = TMachineUtil.getMachineEvents(machine, resultType);
+                tMachine = new TMachine<>(machine.getNs(), machine.getId(), machineTimer, machine.getAuxState(), machineEvents);
+
                 return processSignalTimeout(tMachine, TMachineUtil.getMachineEvents(machine, resultType));
             default:
                 throw new UnsupportedOperationException(String.format("Unsupported signal type, signalType='%s'", signalType));
