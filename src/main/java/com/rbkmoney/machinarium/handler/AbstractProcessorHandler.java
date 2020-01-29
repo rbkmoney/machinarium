@@ -96,9 +96,9 @@ public abstract class AbstractProcessorHandler<A extends TBase, V extends TBase>
         return machineStateChange;
     }
 
-    protected abstract SignalResultData<V> processSignalInit(TMachine machine, A args);
+    protected abstract SignalResultData<V> processSignalInit(TMachine<V> machine, A args);
 
-    protected abstract SignalResultData<V> processSignalTimeout(TMachine machine, List<TMachineEvent<V>> events);
+    protected abstract SignalResultData<V> processSignalTimeout(TMachine<V> machine, List<TMachineEvent<V>> events);
 
     protected abstract CallResultData<V> processCall(String namespace, String machineId, A args, List<TMachineEvent<V>> events);
 

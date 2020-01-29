@@ -37,12 +37,12 @@ public class MachinegunComplexTest extends AbstractTest {
     private Servlet processorServlet = createThriftRPCService(ProcessorSrv.Iface.class, new AbstractProcessorHandler<Value, Value>(Value.class, Value.class) {
 
         @Override
-        protected SignalResultData<Value> processSignalInit(TMachine machine, Value args) {
+        protected SignalResultData<Value> processSignalInit(TMachine<Value> machine, Value args) {
             return new SignalResultData(Value.nl(new Nil()), Arrays.asList(args), new ComplexAction());
         }
 
         @Override
-        protected SignalResultData<Value> processSignalTimeout(TMachine machine, List<TMachineEvent<Value>> tMachineEvents) {
+        protected SignalResultData<Value> processSignalTimeout(TMachine<Value> machine, List<TMachineEvent<Value>> tMachineEvents) {
             return new SignalResultData(Value.nl(new Nil()), Arrays.asList(Value.str("timeout")), new ComplexAction());
         }
 
