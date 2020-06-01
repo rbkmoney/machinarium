@@ -10,6 +10,7 @@ import com.rbkmoney.machinarium.domain.TMachineEvent;
 import com.rbkmoney.machinarium.util.TMachineUtil;
 import com.rbkmoney.machinegun.msgpack.Value;
 import com.rbkmoney.machinegun.stateproc.*;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 
@@ -18,6 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 public abstract class AbstractProcessorHandler<A extends TBase, V extends TBase> implements ProcessorSrv.Iface {
 
     private final Class<A> argsType;
@@ -31,6 +33,7 @@ public abstract class AbstractProcessorHandler<A extends TBase, V extends TBase>
 
     @Override
     public SignalResult processSignal(SignalArgs args) throws TException {
+        log.info("Process signal: {}", args);
         Signal._Fields signalType = args.getSignal().getSetField();
         Machine machine = args.getMachine();
         SignalResultData<V> signalResult = processSignal(signalType, args, machine);
@@ -43,19 +46,22 @@ public abstract class AbstractProcessorHandler<A extends TBase, V extends TBase>
 
     @Override
     public CallResult processCall(CallArgs args) throws TException {
+        log.info("Process call: {}", args);
         Machine machine = args.getMachine();
-        CallResultData<V> callResult = processCall(
+        CallResultData<V> callResultData = processCall(
                 machine.getNs(),
                 machine.getId(),
                 Geck.msgPackToTBase(args.getArg().getBin(), argsType),
                 TMachineUtil.getMachineEvents(machine, resultType)
         );
 
-        return new CallResult(
-                Value.bin(Geck.toMsgPack(callResult.getCallResult())),
-                buildMachineStateChange(callResult.getState(), callResult.getNewEvents()),
-                callResult.getComplexAction()
-        );
+        CallResult callResult = new CallResult(
+                Value.bin(Geck.toMsgPack(callResultData.getCallResult())),
+                buildMachineStateChange(callResultData.getState(), callResultData.getNewEvents()),
+                callResultData.getComplexAction());
+        log.info("Call result: {}", callResult);
+
+        return callResult;
     }
 
     private SignalResultData<V> processSignal(Signal._Fields signalType, SignalArgs args, Machine machine) {
@@ -63,15 +69,18 @@ public abstract class AbstractProcessorHandler<A extends TBase, V extends TBase>
         if (machine.getTimer() != null && !machine.getTimer().isEmpty()) {
             machineTimer = TypeUtil.stringToInstant(machine.getTimer());
         }
+        log.info("Machine timer: {}", machineTimer);
         TMachine<V> tMachine = null;
         switch (signalType) {
             case INIT:
+                log.info("Process init signal");
                 InitSignal initSignal = args.getSignal().getInit();
                 A arg = Geck.msgPackToTBase(initSignal.getArg().getBin(), argsType);
                 tMachine = new TMachine<>(machine.getNs(), machine.getId(), machineTimer, machine.getAuxState(), Collections.emptyList());
 
                 return processSignalInit(tMachine, arg);
             case TIMEOUT:
+                log.info("Process timeout signal");
                 List<TMachineEvent<V>> machineEvents = TMachineUtil.getMachineEvents(machine, resultType);
                 tMachine = new TMachine<>(machine.getNs(), machine.getId(), machineTimer, machine.getAuxState(), machineEvents);
 
@@ -93,6 +102,7 @@ public abstract class AbstractProcessorHandler<A extends TBase, V extends TBase>
                 .map(event -> new Content(Value.bin(Geck.toMsgPack(event))))
                 .collect(Collectors.toList());
         machineStateChange.setEvents(contentList);
+        log.info("Machine state change: {}", machineStateChange);
         return machineStateChange;
     }
 
