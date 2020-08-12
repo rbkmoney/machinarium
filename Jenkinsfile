@@ -1,16 +1,13 @@
 #!groovy
-build('machinarium', 'java-maven') {
+build('machinarium', 'docker-host') {
     checkoutRepo()
     loadBuildUtils()
 
-    def mvnArgs = '-DjvmArgs="-Xmx256m"'
-    runStage('Maven package') {
-        withCredentials([[$class: 'FileBinding', credentialsId: 'java-maven-settings.xml', variable: 'SETTINGS_XML']]) {
-                if (env.BRANCH_NAME == 'master') {
-                    sh 'mvn deploy --batch-mode --settings  $SETTINGS_XML ' + "${mvnArgs}"
-                } else {
-                    sh 'mvn package --batch-mode --settings  $SETTINGS_XML ' + "${mvnArgs}"
-                }
-        }
+    def javaLibPipeline
+    runStage('load JavaLib pipeline') {
+        javaLibPipeline = load("build_utils/jenkins_lib/pipeJavaLib.groovy")
     }
+
+    def buildImageTag = "fcf116dd775cc2e91bffb6a36835754e3f2d5321"
+    javaLibPipeline(buildImageTag)
 }

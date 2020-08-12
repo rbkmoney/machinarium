@@ -1,5 +1,8 @@
 # machinarium
 
+[![Build Status](http://ci.rbkmoney.com/buildStatus/icon?job=rbkmoney_private/machinarium/master)](http://ci.rbkmoney.com/job/rbkmoney_private/job/machinarium/job/master/)
+
+
 Machinegun java client/processor handler lib
 
 
